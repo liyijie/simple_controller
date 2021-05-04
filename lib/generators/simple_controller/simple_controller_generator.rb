@@ -72,7 +72,7 @@ class SimpleControllerGenerator < Rails::Generators::NamedBase
     case action
     when 'get'
       200
-    when 'post'
+    when 'post', 'patch', 'put'
       201
     else
       204
