@@ -13,6 +13,10 @@ class SimpleController::BaseController < ::InheritedResources::Base
     create!
   end
 
+  def update
+    update!
+  end
+
   def index!(options={}, &block)
     options = { template: "#{self.class.view_path}/index" }.merge options
     super(options, &block)
@@ -24,6 +28,11 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   def create!(options={}, &block)
+    options = { template: "#{self.class.view_path}/show", status: 201 }.merge options
+    super(options, &block)
+  end
+
+  def update!(options={}, &block)
     options = { template: "#{self.class.view_path}/show", status: 201 }.merge options
     super(options, &block)
   end
