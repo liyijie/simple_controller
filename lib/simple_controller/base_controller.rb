@@ -100,7 +100,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       view_path = options.delete(:view_path)
       @ransack_off = options.delete(:ransack_off)
       @paginate_off = options.delete(:paginate_off)
-      @distinct_on = options.delete(:distinct_on)
+      @distinct_off = options.delete(:distinct_off)
 
       set_view_path view_path if view_path.present?
       super(options)
@@ -136,7 +136,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   def ransack_paginate(association)
     association = association.ransack(params[:q]).result unless self.class.instance_variable_get(:@ransack_off)
-    association = association.distinct if self.class.instance_variable_get(:@distinct_on)
+    association = association.distinct unless self.class.instance_variable_get(:@distinct_off)
     association = association.paginate(page: params[:page], per_page: params[:per_page]) unless self.class.instance_variable_get(:@paginate_off)
     association
   end
