@@ -141,9 +141,13 @@ class SimpleController::BaseController < ::InheritedResources::Base
     association
   end
 
+  def end_of_association_chain
+    after_association_chain(super)
+  end
+
   def collection
     get_collection_ivar || set_collection_ivar(
-      ransack_paginate(after_association_chain(end_of_association_chain))
+      ransack_paginate(end_of_association_chain)
     )
   end
 
