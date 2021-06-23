@@ -124,17 +124,24 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   # 对于resource的相关操作，都调用policy进行authorize
   def set_resource_ivar(resource)
-    policy_class = self.class.instance_variable_get(:@policy_class)
-    _resource = policy_class&.method_defined?("#{action_name}?") ?
-       authorize(resource, policy_class: policy_class) :
-       resource
+    _resource = authorize_if_policy_class resource, "#{action_name}?"
     instance_variable_set("@#{resource_instance_name}", _resource)
   end
 
   def set_collection_ivar(collection)
-    policy_class = self.class.instance_variable_get(:@policy_class)
-    authorize(resource_class, policy_class: policy_class) if policy_class&.method_defined?("#{action_name}?")
+    authorize_if_policy_class resource_class, "#{action_name}?"
     instance_variable_set("@#{resource_collection_name}", collection)
+  end
+
+  def association_chain
+    @association_chain ||=
+      symbols_for_association_chain.inject([begin_of_association_chain]) do |chain, symbol|
+        parent_instance = evaluate_parent(symbol, resources_configuration[symbol], chain.last)
+        # policy parent
+        parent_config = resources_configuration[symbol]
+        authorize_if_policy_class parent_instance, "parent_#{parent_config[:instance_name]}?"
+        chain << parent_instance
+      end.compact.freeze
   end
 
   def view_path
@@ -184,5 +191,14 @@ class SimpleController::BaseController < ::InheritedResources::Base
     else
       raise
     end
+  end
+
+  private
+
+  def authorize_if_policy_class record, query, policy_class: nil
+    policy_class ||= self.class.instance_variable_get(:@policy_class)
+    policy_class&.method_defined?(query) ?
+       authorize(record, query, policy_class: policy_class) :
+       record
   end
 end
