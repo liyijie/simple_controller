@@ -3,7 +3,7 @@ class <%= controller_class_name %>Controller < SimpleController::BaseController
     resource_class: <%= resource_class %>,
     collection_name: '<%= resource_plural %>',
     instance_name: '<%= resource_singular %>',
-    view_path: '<%= view_path %>'
+    view_path: '<%= view_path %>',
   )
 <% if auth.present? %>
   acts_as_auth_action :<%= auth.downcase %>

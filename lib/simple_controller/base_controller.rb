@@ -1,5 +1,10 @@
 class SimpleController::BaseController < ::InheritedResources::Base
+  include Pundit
   respond_to :json
+
+  rescue_from Pundit::NotAuthorizedError do |e|
+    render json: { error: e.message }, status: 403
+  end
 
   def index
     index!
@@ -101,6 +106,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       @ransack_off = options.delete(:ransack_off)
       @paginate_off = options.delete(:paginate_off)
       @distinct_off = options.delete(:distinct_off)
+      @policy_class = options.delete(:policy_class)
 
       self.class_attribute :importable_class, instance_writer: false unless self.respond_to? :importable_class
       self.class_attribute :exportable_class, instance_writer: false unless self.respond_to? :exportable_class
@@ -114,6 +120,21 @@ class SimpleController::BaseController < ::InheritedResources::Base
     def set_view_path path
       @view_path = path
     end
+  end
+
+  # 对于resource的相关操作，都调用policy进行authorize
+  def set_resource_ivar(resource)
+    policy_class = self.class.instance_variable_get(:@policy_class)
+    _resource = policy_class&.method_defined?("#{action_name}?") ?
+       authorize(resource, policy_class: policy_class) :
+       resource
+    instance_variable_set("@#{resource_instance_name}", _resource)
+  end
+
+  def set_collection_ivar(collection)
+    policy_class = self.class.instance_variable_get(:@policy_class)
+    authorize(resource_class, policy_class: policy_class) if policy_class&.method_defined?("#{action_name}?")
+    instance_variable_set("@#{resource_collection_name}", collection)
   end
 
   def view_path
