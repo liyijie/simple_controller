@@ -170,7 +170,12 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   def end_of_association_chain
-    after_association_chain(super)
+    policy_class ||= self.class.instance_variable_get(:@policy_class)
+    if policy_class.present? && scope_policy_class = "#{policy_class}::Scope".safe_constantize
+      after_association_chain(scope_policy_class.new(current_user, super).resolve)
+    else
+      after_association_chain(super)
+    end
   end
 
   def collection
