@@ -169,13 +169,19 @@ class SimpleController::BaseController < ::InheritedResources::Base
     association
   end
 
-  def end_of_association_chain
+  alias_method :origin_end_of_association_chain, :end_of_association_chain
+
+  def policy_association_chain
     policy_class ||= self.class.instance_variable_get(:@policy_class)
     if policy_class.present? && scope_policy_class = "#{policy_class}::Scope".safe_constantize
-      after_association_chain(scope_policy_class.new(current_user, super).resolve)
+      scope_policy_class.new(current_user, origin_end_of_association_chain).resolve
     else
-      after_association_chain(super)
+      origin_end_of_association_chain
     end
+  end
+
+  def end_of_association_chain
+    after_association_chain(policy_association_chain)
   end
 
   def collection
