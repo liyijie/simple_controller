@@ -181,7 +181,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   def end_of_association_chain
-    after_association_chain(policy_association_chain)
+    after_association_chain(policy_association_chain.order(id: :desc))
   end
 
   def collection
