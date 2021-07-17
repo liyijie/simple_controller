@@ -5,6 +5,7 @@ require 'responders'
 require 'ransack'
 require 'inherited_resources'
 require 'pundit'
+require 'simple_controller/responder'
 
 module SimpleController
   autoload :VERSION,            'simple_controller/version'

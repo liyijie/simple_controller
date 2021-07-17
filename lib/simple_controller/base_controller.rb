@@ -1,5 +1,7 @@
 class SimpleController::BaseController < ::InheritedResources::Base
   include Pundit
+
+  self.responder = SimpleController::Responder
   respond_to :json
 
   rescue_from Pundit::NotAuthorizedError do |e|
@@ -181,7 +183,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   def end_of_association_chain
-    after_association_chain(policy_association_chain.order(id: :desc))
+    after_association_chain(policy_association_chain).order(id: :desc)
   end
 
   def collection
