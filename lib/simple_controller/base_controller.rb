@@ -175,7 +175,10 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   # 执行sub_q
   def ransack_paginate(association)
-    @statistic = association.unscope(:order).distinct.group(params[:group_keys]).count if params[:group_keys].present?
+    if params[:group_keys].present?
+      statistic_association = association.unscope(:order).distinct
+      @statistic = statistic_association.group(params[:group_keys]).count.merge(count: statistic_association.count)
+    end
 
     association = association.ransack(params[:sub_q])).result unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
     association = association.distinct unless self.class.instance_variable_get(:@distinct_off)
