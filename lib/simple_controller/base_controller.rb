@@ -164,8 +164,20 @@ class SimpleController::BaseController < ::InheritedResources::Base
     association
   end
 
+  # ransack q, 这里主要是为了统计
+  def query_association_chain
+    if self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
+      end_of_association_chain
+    else
+      end_of_association_chain.ransack(params[:q].result
+    end
+  end
+
+  # 执行sub_q
   def ransack_paginate(association)
-    association = association.ransack(params[:q]).result unless self.class.instance_variable_get(:@ransack_off)
+    @statistic = association.unscope(:order).distinct.group(params[:group_keys]).count if params[:group_keys].present?
+
+    association = association.ransack(params[:sub_q])).result unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
     association = association.distinct unless self.class.instance_variable_get(:@distinct_off)
     association = association.paginate(page: params[:page], per_page: params[:per_page]) unless self.class.instance_variable_get(:@paginate_off)
     association
@@ -188,7 +200,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   def collection
     get_collection_ivar || set_collection_ivar(
-      ransack_paginate(end_of_association_chain)
+      ransack_paginate(query_association_chain)
     )
   end
 
