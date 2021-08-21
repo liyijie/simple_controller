@@ -124,6 +124,17 @@ class SimpleController::BaseController < ::InheritedResources::Base
     end
   end
 
+  def respond_resource(options: {})
+    options = { template: "#{self.class.view_path}/show", status: 201 }.merge options
+    respond_with(*with_chain(resource), options, &block)
+  end
+
+  def respond_collection(options: {})
+    options = { template: "#{self.class.view_path}/index" }.merge options
+    respond_with(*with_chain(collection), options, &block)
+  end
+
+
   # 对于resource的相关操作，都调用policy进行authorize
   def set_resource_ivar(resource)
     _resource = authorize_if_policy_class resource, "#{action_name}?"
