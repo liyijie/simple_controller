@@ -126,12 +126,12 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   def respond_resource(options: {})
     options = { template: "#{self.class.view_path}/show", status: 201 }.merge options
-    respond_with(*with_chain(resource), options, &block)
+    respond_with(*with_chain(resource), options)
   end
 
   def respond_collection(options: {})
     options = { template: "#{self.class.view_path}/index" }.merge options
-    respond_with(*with_chain(collection), options, &block)
+    respond_with(*with_chain(collection), options)
   end
 
 
