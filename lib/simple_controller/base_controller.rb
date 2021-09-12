@@ -201,9 +201,8 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   def policy_association_chain
     policy_class ||= self.class.instance_variable_get(:@policy_class)
-    scope_policy_class = "#{policy_class}::Scope".safe_constantize
     if policy_class.present? &&
-        scope_policy_class &&
+        (scope_policy_class = "#{policy_class}::Scope".safe_constantize) &&
         origin_end_of_association_chain.is_a?(ActiveRecord::Relation)
       scope_policy_class.new(current_user, origin_end_of_association_chain).resolve
     else
