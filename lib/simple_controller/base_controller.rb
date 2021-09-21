@@ -171,19 +171,12 @@ class SimpleController::BaseController < ::InheritedResources::Base
     end
   end
 
+  # 可以进行继承实现
   def after_association_chain association
     association
   end
 
-  # ransack q, 这里主要是为了统计
-  def query_association_chain
-    if self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
-      end_of_association_chain
-    else
-      end_of_association_chain.ransack(params[:q]).result
-    end
-  end
-
+  # 这个方法为了兼容之前的，后面是可以废弃的
   # 执行sub_q
   def ransack_paginate(association)
     if params[:group_keys].present?
@@ -210,8 +203,21 @@ class SimpleController::BaseController < ::InheritedResources::Base
     end
   end
 
+  # ransack q, 这里主要是为了统计
+  def query_association_chain
+    if self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
+      policy_association_chain
+    else
+      policy_association_chain.ransack(params[:q]).result
+    end
+  end
+
+  def after_of_asscoaition_chain
+    after_association_chain(query_association_chain)
+  end
+
   def end_of_association_chain
-    _association_chain = after_association_chain(policy_association_chain)
+    _association_chain = after_of_asscoaition_chain
     if _association_chain.respond_to?(:order)
       _association_chain.order(id: :desc)
     else
@@ -219,9 +225,28 @@ class SimpleController::BaseController < ::InheritedResources::Base
     end
   end
 
+  # 执行统计和sub_q
+  def ransack_association_chain
+    association = end_of_association_chain
+    if params[:group_keys].present?
+      statistics_association = association.unscope(:order).distinct
+      @statistics = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
+    end
+
+    association = association.ransack(params[:sub_q]).result unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
+    association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)
+    association
+  end
+
+  def paginate_association_chain
+    association = ransack_association_chain
+    association = association.paginate(page: params[:page], per_page: params[:per_page]) unless self.class.instance_variable_get(:@paginate_off)
+    association
+  end
+
   def collection
     get_collection_ivar || set_collection_ivar(
-      ransack_paginate(query_association_chain)
+      paginate_association_chain
     )
   end
 
