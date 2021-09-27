@@ -184,6 +184,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       @statistics = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
     end
 
+    association = association.ransack(params[:q]).result unless self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
     association = association.ransack(params[:sub_q]).result unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
     association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)
     association = association.paginate(page: params[:page], per_page: params[:per_page]) unless self.class.instance_variable_get(:@paginate_off)
