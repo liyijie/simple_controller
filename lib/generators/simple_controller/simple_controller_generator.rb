@@ -9,6 +9,7 @@ class SimpleControllerGenerator < Rails::Generators::NamedBase
   class_option :auth, type: :string, desc: "Authentication model name"
   class_option 'auth-only', type: :boolean, desc: "Only generate authentication"
   class_option 'no-swagger', type: :boolean, desc: "Do not generate swagger spec file"
+  class_option 'no-view', type: :boolean, desc: "Do not generate views file"
 
   def setup
     return if options["auth-only"]
@@ -26,7 +27,7 @@ class SimpleControllerGenerator < Rails::Generators::NamedBase
   end
 
   def copy_view_files
-    return if options["auth-only"]
+    return if options["auth-only"] || options["no-view"]
     %w(index show _single _simple _detail).each do |view|
       filename = filename_with_extensions(view)
       template "views/#{filename}", File.join('app/views', view_path, filename)
