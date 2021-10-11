@@ -104,7 +104,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
     end
 
     # 查找template的时候，能够查找到
-    def self.local_prefixes
+    def local_prefixes
       @view_path.present? ? super.unshift(@view_path) : super
     end
 
