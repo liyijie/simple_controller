@@ -103,6 +103,11 @@ class SimpleController::BaseController < ::InheritedResources::Base
       @view_path
     end
 
+    # 查找template的时候，能够查找到
+    def self.local_prefixes
+      @view_path.present? ? super.unshift(@view_path) : super
+    end
+
     def defaults(options)
       view_path = options.delete(:view_path)
       @ransack_off = options.delete(:ransack_off)
