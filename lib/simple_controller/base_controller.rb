@@ -113,7 +113,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       @ransack_off = options.delete(:ransack_off)
       @paginate_off = options.delete(:paginate_off)
       @distinct_off = options.delete(:distinct_off)
-      @policy_class = options.delete(:policy_class) || self.class.name.sub(/Controller$/, 'Policy').safe_constantize
+      @policy_class = options.delete(:policy_class) || self.name.sub(/Controller$/, 'Policy').safe_constantize
 
       self.class_attribute :importable_class, instance_writer: false unless self.respond_to? :importable_class
       self.class_attribute :exportable_class, instance_writer: false unless self.respond_to? :exportable_class
