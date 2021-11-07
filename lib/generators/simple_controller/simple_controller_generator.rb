@@ -154,14 +154,28 @@ class SimpleControllerGenerator < Rails::Generators::NamedBase
     resource_class&.model_name&.collection
   end
 
-  def attributes_names
+  # mod: 'all', 'only_json', 'without_json'
+  def attributes_names(mod: 'all')
     begin
-      resource_class.columns.map(&:name) - %w(id created_at updated_at)
+      _attributes =
+        case mod.to_s
+        when 'only_json'
+          resource_class.columns.select { |column| column.type.in?([:json, :jsonb])}
+        when 'without_json'
+          resource_class.columns.select { |column| !column.type.in?([:json, :jsonb])}
+        else
+          resource_class.columns
+        end
+      _attributes.map(&:name) - %w(id created_at updated_at)
     rescue NameError
       []
     rescue
       []
     end
+  end
+
+  def belongs_to_refs
+    resource_class.reflections.values.select { |ref| ref.belongs_to? && !ref.polymorphic? }
   end
 
   def filename_with_extensions(name)
@@ -173,6 +187,10 @@ class SimpleControllerGenerator < Rails::Generators::NamedBase
   end
 
   def attributes_list(attributes = attributes_names)
-    attributes.map { |a| ":#{a}"} * ', '
+    attributes.map { |a| ":#{a}"} * ", "
+  end
+
+  def json_attributes_list(attributes = attributes_names(mod: :only_json))
+    attributes.map { |a| "#{a}: {}" } * ", "
   end
 end

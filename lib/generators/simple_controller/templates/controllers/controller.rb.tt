@@ -10,9 +10,15 @@ class <%= controller_class_name %>Controller < SimpleController::BaseController
 <% end -%>
 
   private
-    def <%= resource_singular %>_params
-      params.require(:<%= resource_singular %>).permit(
-        <%= attributes_list(attributes_names) %>
-      )
-    end
+
+  def <%= resource_singular %>_params
+    params.require(:<%= resource_singular %>).permit(
+      <%- attributes_names(mod: :without_json).each do |attribute_name| -%>
+      :<%= attribute_name %>,
+      <%- end -%>
+      <%- attributes_names(mod: :only_json).each do |attribute_name| -%>
+      <%= attribute_name %>: {},
+      <%- end -%>
+    )
+  end
 end
