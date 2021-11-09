@@ -186,7 +186,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
   def ransack_paginate(association)
     if params[:group_keys].present?
       statistics_association = association.unscope(:order).distinct
-      if defined?(Com::CounterStorage) && params[:group_keys].count > 1
+      if defined?(Com::CounterStorage) && Array(params[:group_keys]).count > 1
         hash = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
         @statistics = Com::CounterStorage.load(params[:group_keys], hash, params[:enum_dics]&.to_unsafe_h || {}).group_count(*params[:group_keys])
       else
@@ -241,7 +241,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
     association = end_of_association_chain
     if params[:group_keys].present?
       statistics_association = association.unscope(:order).distinct
-      if defined?(Com::CounterStorage) && params[:group_keys].count > 1
+      if defined?(Com::CounterStorage) && Array(params[:group_keys]).count > 1
         hash = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
         @statistics = Com::CounterStorage.load(params[:group_keys], hash, params[:enum_dics]&.to_unsafe_h || {}).group_count(*params[:group_keys])
       else
