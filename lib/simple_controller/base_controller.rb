@@ -185,13 +185,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
   # 执行sub_q
   def ransack_paginate(association)
     if params[:group_keys].present?
-      statistics_association = association.unscope(:order).distinct
-      if defined?(Com::CounterStorage) && params[:group_keys].count > 1
-        hash = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
-        @statistics = Com::CounterStorage.load(params[:group_keys], hash).group_count(*params[:group_keys])
-      else
-        @statistics = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
-      end
+      @statistics = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
     end
 
     association = association.ransack(params[:q]).result unless self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
@@ -241,7 +235,12 @@ class SimpleController::BaseController < ::InheritedResources::Base
     association = end_of_association_chain
     if params[:group_keys].present?
       statistics_association = association.unscope(:order).distinct
-      @statistics = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
+      if defined?(Com::CounterStorage) && params[:group_keys].count > 1
+        hash = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
+        @statistics = Com::CounterStorage.load(params[:group_keys], hash).group_count(*params[:group_keys])
+      else
+        @statistics = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
+      end
     end
 
     association = association.ransack(params[:sub_q]).result unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
