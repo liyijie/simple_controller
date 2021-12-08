@@ -236,9 +236,13 @@ class SimpleController::BaseController < ::InheritedResources::Base
     end
   end
 
+  def collection_of_association_chain
+    end_of_association_chain
+  end
+
   # 执行统计和sub_q
   def ransack_association_chain
-    association = end_of_association_chain
+    association = collection_of_association_chain
     if params[:group_keys].present?
       statistics_association = association.unscope(:order).distinct
       if defined?(Com::CounterStorage) && Array(params[:group_keys]).count > 1
