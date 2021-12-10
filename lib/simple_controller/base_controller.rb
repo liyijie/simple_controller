@@ -117,8 +117,15 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
       self.class_attribute :importable_class, instance_writer: false unless self.respond_to? :importable_class
       self.class_attribute :exportable_class, instance_writer: false unless self.respond_to? :exportable_class
-      self.importable_class = options.delete(:importable_class) || self.name.sub(/Controller$/, 'Excel').safe_constantize || self.resource_class
-      self.exportable_class = options.delete(:exportable_class) || self.name.sub(/Controller$/, 'Excel').safe_constantize || self.resource_class
+      self.importable_class =
+        options.delete(:importable_class) ||
+        (self.name.sub(/Controller$/, 'Excel::Import').safe_constantize && self.name.sub(/Controller$/, 'Excel').safe_constantize) ||
+        self.resource_class
+
+      self.exportable_class =
+        options.delete(:exportable_class) ||
+        (self.name.sub(/Controller$/, 'Excel::Export').safe_constantize && self.name.sub(/Controller$/, 'Excel').safe_constantize) ||
+        self.resource_class
 
       set_view_path view_path if view_path.present?
       super(options)
