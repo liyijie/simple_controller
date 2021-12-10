@@ -1,4 +1,8 @@
 module SimpleController::Importable
+  rescue_from TalltyImportExport::Import::RecordNotFountError do |e|
+    render json: { error: e.message }, status: 422
+  end
+
   def upload_excel
     excel = importable_class.import_excel_klass.new
     excel.load(params[:file])
@@ -25,5 +29,16 @@ module SimpleController::Importable
     xlsx_file = params[:file] || importable_class.import_excel_klass.new(params[:uid])
     response = importable_class.import_xlsx(xlsx_file, collection, **params.to_unsafe_h.symbolize_keys)
     render json: response, status: 201
+  end
+
+  # 用 文件 交换信息
+  def exchange
+    xlsx_file = params[:file] || importable_class.import_excel_klass.new(params[:uid])
+    resource_ids = importable_class.exchange_to_ids(xlsx_file, collection, **params.to_unsafe_h.symbolize_keys)
+    if params[:return_ids]
+      render json: { ids: resource_ids }, status: 200
+    else
+      respond_with(collection.where(id: resource_ids), { template: "#{self.class.view_path}/index" })
+    end
   end
 end
