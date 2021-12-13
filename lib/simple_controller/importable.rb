@@ -3,7 +3,7 @@ module SimpleController::Importable
   class << self
     def included base
       base.rescue_from TalltyImportExport::Import::RecordNotFountError do |e|
-        render json: { error: e.message }, status: 422
+        render json: { message: e.message, code: -1 }, status: 422
       end
     end
   end
