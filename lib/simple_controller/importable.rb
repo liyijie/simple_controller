@@ -1,6 +1,11 @@
 module SimpleController::Importable
-  rescue_from TalltyImportExport::Import::RecordNotFountError do |e|
-    render json: { error: e.message }, status: 422
+
+  class << self
+    def included base
+      base.rescue_from TalltyImportExport::Import::RecordNotFountError do |e|
+        render json: { error: e.message }, status: 422
+      end
+    end
   end
 
   def upload_excel
