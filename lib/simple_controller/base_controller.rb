@@ -230,21 +230,21 @@ class SimpleController::BaseController < ::InheritedResources::Base
     end
   end
 
-  def after_of_association_chain
-    after_association_chain(query_association_chain)
+  def end_of_association_chain
+    query_association_chain
   end
 
-  def end_of_association_chain
-    _association_chain = after_of_association_chain
+  def after_of_association_chain
+    after_association_chain(end_of_association_chain)
+  end
+
+  def collection_of_association_chain
+     _association_chain = after_of_association_chain
     if _association_chain.respond_to?(:order)
       _association_chain.order(id: :desc)
     else
       _association_chain
     end
-  end
-
-  def collection_of_association_chain
-    end_of_association_chain
   end
 
   # 执行统计和sub_q
