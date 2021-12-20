@@ -115,17 +115,22 @@ class SimpleController::BaseController < ::InheritedResources::Base
       @distinct_off = options.delete(:distinct_off)
       @policy_class = options.delete(:policy_class) || self.name.sub(/Controller$/, 'Policy').safe_constantize
 
-      self.class_attribute :importable_class, instance_writer: false unless self.respond_to? :importable_class
-      self.class_attribute :exportable_class, instance_writer: false unless self.respond_to? :exportable_class
-      self.importable_class =
-        options.delete(:importable_class) ||
-        (self.name.sub(/Controller$/, 'Excel::Import').safe_constantize && self.name.sub(/Controller$/, 'Excel').safe_constantize) ||
-        self.resource_class
+      unless self.method_defined? :importable_class do
+        self.class_attribute :importable_class, instance_writer: false
+        self.importable_class =
+          options.delete(:importable_class) ||
+          (self.name.sub(/Controller$/, 'Excel::Import').safe_constantize && self.name.sub(/Controller$/, 'Excel').safe_constantize) ||
+          self.resource_class
+      end
 
-      self.exportable_class =
-        options.delete(:exportable_class) ||
-        (self.name.sub(/Controller$/, 'Excel::Export').safe_constantize && self.name.sub(/Controller$/, 'Excel').safe_constantize) ||
-        self.resource_class
+      unless self.method_defined? :exportable_class
+        self.class_attribute :exportable_class, instance_writer: false
+
+        self.exportable_class =
+          options.delete(:exportable_class) ||
+          (self.name.sub(/Controller$/, 'Excel::Export').safe_constantize && self.name.sub(/Controller$/, 'Excel').safe_constantize) ||
+          self.resource_class
+      end
 
       set_view_path view_path if view_path.present?
       super(options)
