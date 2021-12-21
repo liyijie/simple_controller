@@ -115,7 +115,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       @distinct_off = options.delete(:distinct_off)
       @policy_class = options.delete(:policy_class) || self.name.sub(/Controller$/, 'Policy').safe_constantize
 
-      unless self.method_defined? :importable_class do
+      unless self.method_defined? :importable_class
         self.class_attribute :importable_class, instance_writer: false
         self.importable_class =
           options.delete(:importable_class) ||
