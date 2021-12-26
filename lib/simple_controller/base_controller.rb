@@ -115,6 +115,9 @@ class SimpleController::BaseController < ::InheritedResources::Base
       @distinct_off = options.delete(:distinct_off)
       @policy_class = options.delete(:policy_class) || self.name.sub(/Controller$/, 'Policy').safe_constantize
 
+      set_view_path view_path if view_path.present?
+      super(options)
+
       unless self.method_defined? :importable_class
         self.class_attribute :importable_class, instance_writer: false
         self.importable_class =
@@ -132,8 +135,6 @@ class SimpleController::BaseController < ::InheritedResources::Base
           self.resource_class
       end
 
-      set_view_path view_path if view_path.present?
-      super(options)
     end
 
     def set_view_path path
