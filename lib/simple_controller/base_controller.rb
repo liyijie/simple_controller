@@ -114,6 +114,8 @@ class SimpleController::BaseController < ::InheritedResources::Base
       @paginate_off = options.delete(:paginate_off)
       @distinct_off = options.delete(:distinct_off)
       @policy_class = options.delete(:policy_class) || self.name.sub(/Controller$/, 'Policy').safe_constantize
+      _importable_class = options.delete(:importable_class)
+      _exportable_class = options.delete(:exportable_class)
 
       set_view_path view_path if view_path.present?
       super(options)
@@ -121,7 +123,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       unless self.method_defined? :importable_class
         self.class_attribute :importable_class, instance_writer: false
         self.importable_class =
-          options.delete(:importable_class) ||
+          _importable_class ||
           (self.name.sub(/Controller$/, 'Excel::Import').safe_constantize && self.name.sub(/Controller$/, 'Excel').safe_constantize) ||
           self.resource_class
       end
@@ -130,7 +132,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
         self.class_attribute :exportable_class, instance_writer: false
 
         self.exportable_class =
-          options.delete(:exportable_class) ||
+          _exportable_class ||
           (self.name.sub(/Controller$/, 'Excel::Export').safe_constantize && self.name.sub(/Controller$/, 'Excel').safe_constantize) ||
           self.resource_class
       end
