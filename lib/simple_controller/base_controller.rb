@@ -234,7 +234,8 @@ class SimpleController::BaseController < ::InheritedResources::Base
     if self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
       policy_association_chain
     else
-      policy_association_chain.ransack(params[:q]).result
+      association = Array(params[:q][:scopes]).recude(policy_association_chain) { |_association, _scope| _association.send(_scope) } if params[:q][:scopes].present?
+      association = association.ransack(params[:q].except(:scopes)).result
     end
   end
 
@@ -268,8 +269,14 @@ class SimpleController::BaseController < ::InheritedResources::Base
       end
     end
 
-    association = association.ransack(params[:sub_q]).result unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
-    association = association.ransack(params[:q]).result unless self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
+    unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
+      association = Array(params[:sub_q][:scopes]).recude(association) { |_association, _scope| _association.send(_scope) } if params[:sub_q][:scopes].present?
+      association = association.ransack(params[:sub_q].except(:scopes)).result
+    end
+    unless self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
+      association = Array(params[:q][:scopes]).recude(association) { |_association, _scope| _association.send(_scope) } if params[:q][:scopes].present?
+      association = association.ransack(params[:q].except(:scopes)).result
+    end
     association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)
     association
   end
