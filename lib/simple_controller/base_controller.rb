@@ -234,7 +234,11 @@ class SimpleController::BaseController < ::InheritedResources::Base
     if self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
       policy_association_chain
     else
-      association = Array(params[:q][:scopes]).recude(policy_association_chain) { |_association, _scope| _association.send(_scope) } if params[:q][:scopes].present?
+      if params[:q][:scopes].present?
+        association = Array(params[:q][:scopes]).recude(policy_association_chain) { |_association, _scope| _association.send(_scope) }
+      else
+        association = policy_association_chain
+      end
       association = association.ransack(params[:q].except(:scopes)).result
     end
   end
