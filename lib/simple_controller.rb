@@ -5,6 +5,7 @@ require 'responders'
 require 'ransack'
 require 'inherited_resources'
 require 'pundit'
+require 'ransack_mongo'
 
 module SimpleController
   autoload :VERSION,            'simple_controller/version'

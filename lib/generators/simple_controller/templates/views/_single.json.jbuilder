@@ -1,3 +1,4 @@
+<%- if active_record? -%>
 json.extract!(
   <%= resource_singular %>,
   :id,
@@ -7,3 +8,6 @@ json.extract!(
   :<%= attribute_name %>,
   <%- end -%>
 )
+<%- else -%>
+json.merge! <%= resource_singular %>.as_json
+<%- end -%>

@@ -175,7 +175,13 @@ class SimpleControllerGenerator < Rails::Generators::NamedBase
   end
 
   def belongs_to_refs
-    resource_class.reflections.values.select { |ref| ref.belongs_to? && !ref.polymorphic? }
+     active_record? ?
+      resource_class.reflections.values.select { |ref| ref.belongs_to? && !ref.polymorphic? } :
+      []
+  end
+
+  def active_record?
+    resource_class < ActiveRecord::Base
   end
 
   def filename_with_extensions(name)

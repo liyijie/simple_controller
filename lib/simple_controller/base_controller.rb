@@ -211,7 +211,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
     association = association.ransack(params[:q]).result unless self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
     association = association.ransack(params[:sub_q]).result unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
-    association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)
+    association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct) || !active_record?
     association = association.paginate(page: params[:page], per_page: params[:per_page]) unless self.class.instance_variable_get(:@paginate_off)
     association
   end
@@ -225,7 +225,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
         origin_end_of_association_chain.is_a?(ActiveRecord::Relation)
       scope_policy_class.new(current_user, origin_end_of_association_chain).resolve
     else
-      origin_end_of_association_chain
+      origin_end_of_association_chain.all
     end
   end
 
@@ -281,7 +281,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       association = Array(params[:q][:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if params[:q][:scopes].present?
       association = association.ransack(params[:q].except(:scopes)).result
     end
-    association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)
+    association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)|| !active_record?
     association
   end
 
@@ -318,5 +318,9 @@ class SimpleController::BaseController < ::InheritedResources::Base
     policy_class&.method_defined?(query) ?
        authorize(record, query, policy_class: policy_class) :
        record
+  end
+
+  def active_record?
+    self.class.resource_class < ActiveRecord::Base
   end
 end
