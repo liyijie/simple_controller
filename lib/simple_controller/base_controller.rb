@@ -209,8 +209,8 @@ class SimpleController::BaseController < ::InheritedResources::Base
       end
     end
 
-    association = association.ransack(params[:q]).result unless self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
-    association = association.ransack(params[:sub_q]).result unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
+    association = ransack_association(association, params[:q]) unless self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
+    association = ransack_association(association, params[:sub_q]) unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
     association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct) || !active_record?
     association = association.paginate(page: params[:page], per_page: params[:per_page]) unless self.class.instance_variable_get(:@paginate_off)
     association
@@ -239,7 +239,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       else
         association = policy_association_chain
       end
-      association = association.ransack(params[:q].except(:scopes)).result
+      association = ransack_association(association, params[:q].except(:scopes))
     end
   end
 
@@ -275,11 +275,11 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
     unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
       association = Array(params[:sub_q][:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if params[:sub_q][:scopes].present?
-      association = association.ransack(params[:sub_q].except(:scopes)).result
+      association = ransack_association(association, params[:sub_q].except(:scopes))
     end
     unless self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
       association = Array(params[:q][:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if params[:q][:scopes].present?
-      association = association.ransack(params[:q].except(:scopes)).result
+      association = ransack_association(association, params[:q].except(:scopes))
     end
     association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)|| !active_record?
     association
@@ -322,5 +322,14 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   def active_record?
     self.class.resource_class < ActiveRecord::Base
+  end
+
+  def ransack_association(association, query_params)
+    if active_record?
+      association.ransack(query_params).result
+    else
+      selector = RansackMongo::Query.parse(query_params)
+      association.where(selector)
+    end
   end
 end
