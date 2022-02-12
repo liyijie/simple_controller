@@ -1,5 +1,5 @@
 class SimpleController::BaseController < ::InheritedResources::Base
-  include Pundit
+  include Pundit::Authorization
 
   self.responder = SimpleController::Responder
   respond_to :json
