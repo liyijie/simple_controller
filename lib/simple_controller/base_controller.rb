@@ -225,7 +225,8 @@ class SimpleController::BaseController < ::InheritedResources::Base
         origin_end_of_association_chain.is_a?(ActiveRecord::Relation)
       scope_policy_class.new(current_user, origin_end_of_association_chain).resolve
     else
-      origin_end_of_association_chain.all
+      origin_end_of_association_chain.respond_to?(:all) ?
+        origin_end_of_association_chain.all : origin_end_of_association_chain
     end
   end
 
