@@ -212,6 +212,10 @@ class SimpleController::BaseController < ::InheritedResources::Base
     association = ransack_association(association, params[:q]) unless self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
     association = ransack_association(association, params[:sub_q]) unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
     association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct) || !active_record?
+    if params[:q][:refs].present?
+      _refs = Array(params[:q][:refs]).map(&:to_sym)
+      association = association.includes(*_refs).joins(*_refs)
+    end
     association = association.paginate(page: params[:page], per_page: params[:per_page]) unless self.class.instance_variable_get(:@paginate_off)
     association
   end
