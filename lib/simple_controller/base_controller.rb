@@ -286,7 +286,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       association = Array(params[:q][:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if params[:q][:scopes].present?
       association = ransack_association(association, params[:q].except(:scopes, :refs))
     end
-    if params[:q][:refs].present?
+    if params.dig(:q, :refs).present?
       _refs = Array(params[:q][:refs]).map(&:to_sym)
       association = association.includes(*_refs).joins(*_refs)
     end
