@@ -280,11 +280,15 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
     unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
       association = Array(params[:sub_q][:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if params[:sub_q][:scopes].present?
-      association = ransack_association(association, params[:sub_q].except(:scopes))
+      association = ransack_association(association, params[:sub_q].except(:scopes, :refs))
     end
     unless self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
       association = Array(params[:q][:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if params[:q][:scopes].present?
-      association = ransack_association(association, params[:q].except(:scopes))
+      association = ransack_association(association, params[:q].except(:scopes, :refs))
+    end
+    if params[:q][:refs].present?
+      _refs = Array(params[:q][:refs]).map(&:to_sym)
+      association = association.includes(*_refs).joins(*_refs)
     end
     association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)|| !active_record?
     association
