@@ -299,7 +299,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       end.join(', ')
       association = association.order(Arel.sql(sql))
     end
-    association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)|| !active_record?
+    association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)|| !active_record? || params.dig(:q, :jorder).present?
     association
   end
 
