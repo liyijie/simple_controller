@@ -294,7 +294,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       order_array = Array(params.dig(:q, :jorder))
       sql= order_array.map do |order_string|
         _attr, _order = order_string.split(' ')
-       _jsonb_attr = _attr.split('.').map { |a| "'#{a}'"}.join('->')
+        _jsonb_attr = _attr.split('.').map.with_index { |a, index| index == 0 ? a : "'#{a}'"}.join('->')
        "#{_jsonb_attr} #{_order}"
       end.join(', ')
       association = association.order(Arel.sql(sql))
