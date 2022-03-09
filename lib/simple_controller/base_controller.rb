@@ -280,15 +280,24 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
     unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
       association = Array(params[:sub_q][:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if params[:sub_q][:scopes].present?
-      association = ransack_association(association, params[:sub_q].except(:scopes, :refs))
+      association = ransack_association(association, params[:sub_q].except(:scopes, :refs, :jorder))
     end
     unless self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
       association = Array(params[:q][:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if params[:q][:scopes].present?
-      association = ransack_association(association, params[:q].except(:scopes, :refs))
+      association = ransack_association(association, params[:q].except(:scopes, :refs, :jorder))
     end
     if params.dig(:q, :refs).present?
       _refs = Array(params[:q][:refs]).map(&:to_sym)
       association = association.includes(*_refs).joins(*_refs)
+    end
+    if params.dig(:q, :jorder).present?
+      order_array = Array(params.dig(:q, :jorder))
+      sql= order_array.map do |order_string|
+        _attr, _order = order_string.split(' ')
+       _jsonb_attr = _attr.split('.').map { |a| "'#{a}'"}.join('->')
+       "#{_jsonb_attr} #{_order}"
+      end.join(', ')
+      association = association.order(Arel.sql(sql))
     end
     association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)|| !active_record?
     association
