@@ -212,10 +212,6 @@ class SimpleController::BaseController < ::InheritedResources::Base
     association = ransack_association(association, params[:q]) unless self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
     association = ransack_association(association, params[:sub_q]) unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
     association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct) || !active_record?
-    if params[:q][:refs].present?
-      _refs = Array(params[:q][:refs]).map(&:to_sym)
-      association = association.includes(*_refs).joins(*_refs)
-    end
     association = association.paginate(page: params[:page], per_page: params[:per_page]) unless self.class.instance_variable_get(:@paginate_off)
     association
   end
@@ -239,12 +235,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
     if self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
       policy_association_chain
     else
-      if params[:q][:scopes].present?
-        association = Array(params[:q][:scopes]).reduce(policy_association_chain) { |_association, _scope| _association.send(_scope) }
-      else
-        association = policy_association_chain
-      end
-      association = ransack_association(association, params[:q].except(:scopes))
+      ransack_association(association, params[:q])
     end
   end
 
@@ -278,27 +269,8 @@ class SimpleController::BaseController < ::InheritedResources::Base
       end
     end
 
-    unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
-      association = Array(params[:sub_q][:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if params[:sub_q][:scopes].present?
-      association = ransack_association(association, params[:sub_q].except(:scopes, :refs, :jorder))
-    end
-    unless self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
-      association = Array(params[:q][:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if params[:q][:scopes].present?
-      association = ransack_association(association, params[:q].except(:scopes, :refs, :jorder))
-    end
-    if params.dig(:q, :refs).present?
-      _refs = Array(params[:q][:refs]).map(&:to_sym)
-      association = association.includes(*_refs).joins(*_refs)
-    end
-    if params.dig(:q, :jorder).present?
-      order_array = Array(params.dig(:q, :jorder))
-      sql= order_array.map do |order_string|
-        _attr, _order = order_string.split(' ')
-        _jsonb_attr = _attr.split('.').map.with_index { |a, index| index == 0 ? a : "'#{a}'"}.join('->')
-       "#{_jsonb_attr} #{_order}"
-      end.join(', ')
-      association = association.order(Arel.sql(sql))
-    end
+    association = ransack_association(association, params[:sub_q]) unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
+
     association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)|| !active_record? || params.dig(:q, :jorder).present?
     association
   end
@@ -343,10 +315,27 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   def ransack_association(association, query_params)
+    # scopes，代表前端直接调用后台的scope过滤
+    association = Array(query_params[:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if query_params[:scopes].present?
+    end
     if active_record?
-      association.ransack(query_params).result
+      association.ransack(query_params.except(:scopes, :refs, :jorder)).result
+      # PG，为了支持distinct和order的操作，需要增加refs，手动includes 和 joins
+      if query_params[:refs].present?
+        _refs = Array(query_params[:refs]).map(&:to_sym)
+        association = association.includes(*_refs).joins(*_refs)
+      end
+      if query_params.dig(:jorder).present?
+        order_array = Array(query_params.dig(:jorder))
+        sql= order_array.map do |order_string|
+          _attr, _order = order_string.split(' ')
+          _jsonb_attr = _attr.split('.').map.with_index { |a, index| index == 0 ? a : "'#{a}'"}.join('->')
+          "#{_jsonb_attr} #{_order}"
+        end.join(', ')
+        association = association.order(Arel.sql(sql))
+      end
     else
-      _params = query_params.clone
+      _params = query_params.clone.except(:scopes)
       order_params = _params.delete(:s)
       selector = RansackMongo::Query.parse(_params)
       order_params.present? ?
