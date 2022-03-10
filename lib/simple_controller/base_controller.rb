@@ -235,7 +235,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
     if self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
       policy_association_chain
     else
-      ransack_association(association, params[:q])
+      ransack_association(policy_association_chain, params[:q])
     end
   end
 
