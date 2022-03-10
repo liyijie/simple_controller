@@ -318,7 +318,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
     # scopes，代表前端直接调用后台的scope过滤
     association = Array(query_params[:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if query_params[:scopes].present?
     if active_record?
-      association.ransack(query_params.except(:scopes, :refs, :jorder)).result
+      association = association.ransack(query_params.except(:scopes, :refs, :jorder)).result
       # PG，为了支持distinct和order的操作，需要增加refs，手动includes 和 joins
       if query_params[:refs].present?
         _refs = Array(query_params[:refs]).map(&:to_sym)
