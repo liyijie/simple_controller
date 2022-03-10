@@ -340,5 +340,6 @@ class SimpleController::BaseController < ::InheritedResources::Base
       order_params.present? ?
         association.where(selector).order(*Array(order_params)) : association.where(selector)
     end
+    association
   end
 end
