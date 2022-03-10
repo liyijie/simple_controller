@@ -337,7 +337,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       _params = query_params.clone.except(:scopes)
       order_params = _params.delete(:s)
       selector = RansackMongo::Query.parse(_params)
-      order_params.present? ?
+      association = order_params.present? ?
         association.where(selector).order(*Array(order_params)) : association.where(selector)
     end
     association
