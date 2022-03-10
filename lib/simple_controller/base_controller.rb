@@ -248,7 +248,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   def collection_of_association_chain
-     _association_chain = after_of_association_chain
+    _association_chain = after_of_association_chain
     if _association_chain.respond_to?(:order)
       _association_chain.order(id: :desc)
     else
@@ -306,8 +306,8 @@ class SimpleController::BaseController < ::InheritedResources::Base
   def authorize_if_policy_class record, query, policy_class: nil
     policy_class ||= self.class.instance_variable_get(:@policy_class)
     policy_class&.method_defined?(query) ?
-       authorize(record, query, policy_class: policy_class) :
-       record
+      authorize(record, query, policy_class: policy_class) :
+      record
   end
 
   def active_record?
@@ -317,7 +317,6 @@ class SimpleController::BaseController < ::InheritedResources::Base
   def ransack_association(association, query_params)
     # scopes，代表前端直接调用后台的scope过滤
     association = Array(query_params[:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if query_params[:scopes].present?
-    end
     if active_record?
       association.ransack(query_params.except(:scopes, :refs, :jorder)).result
       # PG，为了支持distinct和order的操作，需要增加refs，手动includes 和 joins
