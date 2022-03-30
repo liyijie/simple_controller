@@ -143,7 +143,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
     def excel_class_name
       unless @excel_class_name.present?
         resource_class_name_arr = self.resource_class.name.split('::')
-        if resource_class_name_arr > 1
+        if resource_class_name_arr.size > 1
           @excel_class_name = ( resource_class_name_arr.insert(1, 'Excel') ).join('::')
         else
           @excel_class_name = ( resource_class_name_arr.insert(0, 'Excel') ).join('::')
