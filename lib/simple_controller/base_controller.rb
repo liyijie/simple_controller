@@ -125,6 +125,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
         self.importable_class =
           _importable_class ||
           (self.name.sub(/Controller$/, 'Excel::Import').safe_constantize && self.name.sub(/Controller$/, 'Excel').safe_constantize) ||
+          ("#{self.excel_class_name}::Import".safe_constantize && self.excel_class_name.safe_constantize) ||
           self.resource_class
       end
 
@@ -134,9 +135,21 @@ class SimpleController::BaseController < ::InheritedResources::Base
         self.exportable_class =
           _exportable_class ||
           (self.name.sub(/Controller$/, 'Excel::Export').safe_constantize && self.name.sub(/Controller$/, 'Excel').safe_constantize) ||
+          ("#{self.excel_class_name}::Export".safe_constantize && self.excel_class_name.safe_constantize) ||
           self.resource_class
       end
+    end
 
+    def excel_class_name
+      unless @excel_class_name.present?
+        resource_class_name_arr = self.resource_class.name.split('::')
+        if resource_class_name_arr > 1
+          @excel_class_name = ( resource_class_name_arr.insert(1, 'Excel') ).join('::')
+        else
+          @excel_class_name = ( resource_class_name_arr.insert(0, 'Excel') ).join('::')
+        end
+      end
+      @excel_class_name
     end
 
     def set_view_path path
