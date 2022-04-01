@@ -111,6 +111,13 @@ class SimpleController::BaseController < ::InheritedResources::Base
   def create_resource(object)
     if defined?(RailsBpm) && object.respond_to?(:flowable_operate_user)
       object.flowable_operate_user = @current_user
+      begin
+        object.generate_update_instance(
+          user: @current_user,
+          auto_submit: true,
+        )
+      rescue Bpm::NotConfigError => e
+      end
     end
     super(object)
   end
