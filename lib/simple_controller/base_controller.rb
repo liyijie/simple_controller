@@ -98,6 +98,68 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   protected
 
+  # Responsible for saving the resource on :create method. Overwriting this
+  # allow you to control the way resource is saved. Let's say you have a
+  # PassworsController who is responsible for finding an user by email and
+  # sent password instructions for him. Instead of overwriting the entire
+  # :create method, you could do something:
+  #
+  #   def create_resource(object)
+  #     object.send_instructions_by_email
+  #   end
+  #
+  def create_resource(object)
+    if defined?(RailsBpm) && object.respond_to?(:flowable_operate_user)
+      object.flowable_operate_user = @current_user
+    end
+    super(object)
+  end
+
+  # Responsible for updating the resource in :update method. This allow you
+  # to handle how the resource is going to be updated, let's say in a different
+  # way than the usual :update_attributes:
+  #
+  #   def update_resource(object, attributes)
+  #     object.reset_password!(attributes)
+  #   end
+  #
+  def update_resource(object, attributes)
+    if defined?(RailsBpm) && object.respond_to?(:flowable_operate_user)
+      begin
+        object.generate_update_instance(
+          user: @current_user,
+          auto_submit: true,
+        )
+      rescue Bpm::NotConfigError => e
+        super(object, attributes)
+      end
+    else
+      super(object, attributes)
+    end
+  end
+
+  # Handle the :destroy method for the resource. Overwrite it to call your
+  # own method for destroying the resource, as:
+  #
+  #   def destroy_resource(object)
+  #     object.cancel
+  #   end
+  #
+  def destroy_resource(object)
+    if defined?(RailsBpm) && object.respond_to?(:flowable_operate_user)
+      begin
+        object.generate_destroy_instance(
+          user: @current_user,
+          auto_submit: true,
+        )
+      rescue Bpm::NotConfigError => e
+        super(object)
+      end
+    else
+      super(object)
+    end
+  end
+
   class << self
     def view_path
       @view_path
