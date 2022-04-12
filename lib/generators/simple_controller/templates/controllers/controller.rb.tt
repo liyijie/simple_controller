@@ -13,6 +13,7 @@ class <%= controller_class_name %>Controller < SimpleController::BaseController
 
   def <%= resource_singular %>_params
     params.require(:<%= resource_singular %>).permit(
+      *resource_class.try(:extra_permitted_attributes),
       <%- attributes_names(mod: :without_json).each do |attribute_name| -%>
       :<%= attribute_name %>,
       <%- end -%>
