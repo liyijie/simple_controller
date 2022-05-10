@@ -176,7 +176,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       context: params,
     }
     authorize_if_policy_class policy_info, "#{action_name}?"
-    instance_variable_set("@#{resource_instance_name}", _resource)
+    instance_variable_set("@#{resource_instance_name}", resource)
   end
 
   def set_collection_ivar(collection)
