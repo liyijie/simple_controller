@@ -175,7 +175,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       klass: resource_class,
       context: params,
     }
-    _resource = authorize_if_policy_class policy_info, "#{action_name}?"
+    authorize_if_policy_class policy_info, "#{action_name}?"
     instance_variable_set("@#{resource_instance_name}", _resource)
   end
 
