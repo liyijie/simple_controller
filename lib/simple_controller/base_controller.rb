@@ -170,12 +170,22 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   # 对于resource的相关操作，都调用policy进行authorize
   def set_resource_ivar(resource)
-    _resource = authorize_if_policy_class resource, "#{action_name}?"
+    policy_info = {
+      record: resource,
+      klass: resource_class,
+      context: params,
+    }
+    _resource = authorize_if_policy_class policy_info, "#{action_name}?"
     instance_variable_set("@#{resource_instance_name}", _resource)
   end
 
   def set_collection_ivar(collection)
-    authorize_if_policy_class resource_class, "#{action_name}?"
+    policy_info = {
+      collection: collection,
+      klass: resource_class,
+      context: params,
+    }
+    authorize_if_policy_class policy_info, "#{action_name}?"
     instance_variable_set("@#{resource_collection_name}", collection)
   end
 
