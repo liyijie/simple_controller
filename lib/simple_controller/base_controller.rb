@@ -40,8 +40,17 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   def update!(options={}, &block)
+    # 可以传入resource_params进行方法复用
+    _resource_params = options.delete(:resource_params) || resource_params
     options = { template: "#{self.class.view_path}/show", status: 201 }.merge options
-    super(options, &block)
+
+    object = resource
+
+    if update_resource(object, _resource_params)
+      options[:location] ||= smart_resource_url
+    end
+
+    respond_with_dual_blocks(object, options, &block)
   end
 
   def batch_destroy
