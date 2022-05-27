@@ -41,7 +41,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   def update!(options={}, &block)
     # 可以传入resource_params进行方法复用
-    _resource_params = options.delete(:resource_params) || resource_params
+    _resource_params = Array.new(options.delete(:resource_params) || resource_params)
     options = { template: "#{self.class.view_path}/show", status: 201 }.merge options
 
     object = resource
