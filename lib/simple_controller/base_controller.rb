@@ -292,7 +292,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
   # 执行统计和sub_q
   def ransack_association_chain
     association = collection_of_association_chain
-    if params[:group_keys].present?
+    if params[:group_keys].present? && active_record?
       statistics_association = association.unscope(:order).distinct
       if defined?(Com::CounterStorage) && Array(params[:group_keys]).count > 1
         hash = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
