@@ -35,7 +35,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "will_paginate"
   spec.add_dependency "responders"
   spec.add_dependency "pundit"
-  spec.add_dependency "ransack_mongo"
+  spec.add_dependency "ta_ransack_mongo"
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake"
