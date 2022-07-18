@@ -121,6 +121,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
     def defaults(options)
       view_path = options.delete(:view_path)
       @ransack_off = options.delete(:ransack_off)
+      @order_off = options.delete(:order_off)
       @paginate_off = options.delete(:paginate_off)
       @distinct_off = options.delete(:distinct_off)
       @policy_class = options.delete(:policy_class) || self.name.sub(/Controller$/, 'Policy').safe_constantize
@@ -282,7 +283,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   def collection_of_association_chain
     _association_chain = after_of_association_chain
-    if _association_chain.respond_to?(:order)
+    if _association_chain.respond_to?(:order) && !self.class.instance_variable_get(:@order_off)
       _association_chain.order(id: :desc)
     else
       _association_chain
