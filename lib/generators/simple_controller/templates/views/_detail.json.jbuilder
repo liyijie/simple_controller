@@ -1,1 +1,1 @@
-json.partial! "<%= view_path %>/simple", <%= resource_singular %>: <%= resource_singular %>
+json.partial! '<%= view_path %>/simple', <%= resource_singular %>: <%= resource_singular %>
