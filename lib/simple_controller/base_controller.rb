@@ -181,20 +181,30 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   # 对于resource的相关操作，都调用policy进行authorize
   def set_resource_ivar(resource)
+    parent_objects = symbols_for_association_chain.reduce({}) do |h, sym|
+      h[sym.to_sym] = instance_variable_get("@#{sym}")
+      h
+    end
     policy_info = {
       record: resource,
       klass: resource_class,
       context: params,
+      parents: parent_objects,
     }
     authorize_if_policy_class policy_info, "#{action_name}?"
     instance_variable_set("@#{resource_instance_name}", resource)
   end
 
   def set_collection_ivar(collection)
+    parent_objects = symbols_for_association_chain.reduce({}) do |h, sym|
+      h[sym.to_sym] = instance_variable_get("@#{sym}")
+      h
+    end
     policy_info = {
       collection: collection,
       klass: resource_class,
       context: params,
+      parents: parent_objects,
     }
     authorize_if_policy_class policy_info, "#{action_name}?"
     instance_variable_set("@#{resource_collection_name}", collection)
@@ -257,7 +267,11 @@ class SimpleController::BaseController < ::InheritedResources::Base
     if policy_class.present? &&
         (scope_policy_class = "#{policy_class}::Scope".safe_constantize) &&
         origin_end_of_association_chain.is_a?(ActiveRecord::Relation)
-      scope_policy_class.new(current_user, origin_end_of_association_chain).resolve
+      parent_objects = symbols_for_association_chain.reduce({}) do |h, sym|
+        h[sym.to_sym] = instance_variable_get("@#{sym}")
+        h
+      end
+      scope_policy_class.new(current_user, origin_end_of_association_chain, **parent_objects).resolve
     else
       origin_end_of_association_chain.respond_to?(:all) ?
         origin_end_of_association_chain.all : origin_end_of_association_chain
