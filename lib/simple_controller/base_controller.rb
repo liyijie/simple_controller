@@ -311,7 +311,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       statistics_association = association.unscope(:order).distinct
       if defined?(Com::CounterStorage) && Array(params[:group_keys]).count > 1
         hash = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
-        @statistics = Com::CounterStorage.load(params[:group_keys], hash, params[:enum_dics]&.to_unsafe_h || {}).group_sum(*params[:group_keys])
+        @statistics = Com::CounterStorage.load(params[:group_keys], hash, enum_dics: params[:enum_dics]&.to_unsafe_h || {}).group_sum(*params[:group_keys])
       else
         @statistics = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
       end
