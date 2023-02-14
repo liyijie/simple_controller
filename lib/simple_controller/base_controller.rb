@@ -296,12 +296,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   def collection_of_association_chain
-    _association_chain = after_of_association_chain
-    if _association_chain.respond_to?(:order) && !self.class.instance_variable_get(:@order_off)
-      _association_chain.order(id: :desc)
-    else
-      _association_chain
-    end
+    after_of_association_chain
   end
 
   # 执行统计和sub_q
@@ -318,7 +313,9 @@ class SimpleController::BaseController < ::InheritedResources::Base
     end
 
     association = ransack_association(association, params[:sub_q]) unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
-
+    # 增加默认id排序
+    association = association.order(id: :desc) if association.respond_to?(:order) && !self.class.instance_variable_get(:@order_off)
+    # distinct处理
     association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)|| !active_record? || params.dig(:q, :jorder).present? || params[:distinct_off].present?
     association
   end
