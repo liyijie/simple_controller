@@ -24,22 +24,22 @@ class SimpleController::BaseController < ::InheritedResources::Base
     update!
   end
 
-  def index!(options={}, &block)
+  def index!(options = {}, &block)
     options = { template: "#{self.class.view_path}/index" }.merge options
     super(options, &block)
   end
 
-  def show!(options={}, &block)
+  def show!(options = {}, &block)
     options = { template: "#{self.class.view_path}/show" }.merge options
     super(options, &block)
   end
 
-  def create!(options={}, &block)
+  def create!(options = {}, &block)
     options = { template: "#{self.class.view_path}/show", status: 201 }.merge options
     super(options, &block)
   end
 
-  def update!(options={}, &block)
+  def update!(options = {}, &block)
     # 可以传入resource_params进行方法复用
     _resource_params = options.delete(:resource_params)
     _update_params = _resource_params.present? ? [_resource_params] : resource_params
@@ -47,9 +47,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
     object = resource
 
-    if update_resource(object, _update_params)
-      options[:location] ||= smart_resource_url
-    end
+    options[:location] ||= smart_resource_url if update_resource(object, _update_params)
 
     respond_with_dual_blocks(object, options, &block)
   end
@@ -74,12 +72,10 @@ class SimpleController::BaseController < ::InheritedResources::Base
       end
     else
       batch_create_params.each do |resource_params|
-        begin
-          collection.create!(*resource_params)
-          success_count += 1
-        rescue
-          error_count += 1
-        end
+        collection.create!(*resource_params)
+        success_count += 1
+      rescue StandardError
+        error_count += 1
       end
     end
     render json: { success_count: success_count, error_count: error_count }, status: 201
@@ -95,12 +91,10 @@ class SimpleController::BaseController < ::InheritedResources::Base
       success_count = collection.count
     else
       collection.where(id: params[:ids]).find_each do |_resource|
-        begin
-          _resource.update!(*resource_params)
-          success_count += 1
-        rescue
-          error_count += 1
-        end
+        _resource.update!(*resource_params)
+        success_count += 1
+      rescue StandardError
+        error_count += 1
       end
     end
     render json: { success_count: success_count, error_count: error_count }, status: 201
@@ -109,9 +103,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
   protected
 
   class << self
-    def view_path
-      @view_path
-    end
+    attr_reader :view_path
 
     # 查找template的时候，能够查找到
     def local_prefixes
@@ -124,46 +116,46 @@ class SimpleController::BaseController < ::InheritedResources::Base
       @order_off = options.delete(:order_off)
       @paginate_off = options.delete(:paginate_off)
       @distinct_off = options.delete(:distinct_off)
-      @policy_class = options.delete(:policy_class) || self.name.sub(/Controller$/, 'Policy').safe_constantize
+      @policy_class = options.delete(:policy_class) || name.sub(/Controller$/, 'Policy').safe_constantize
       _importable_class = options.delete(:importable_class)
       _exportable_class = options.delete(:exportable_class)
 
       set_view_path view_path if view_path.present?
       super(options)
 
-      unless self.method_defined? :importable_class
-        self.class_attribute :importable_class, instance_writer: false
+      unless method_defined? :importable_class
+        class_attribute :importable_class, instance_writer: false
         self.importable_class =
           _importable_class ||
-          (self.name.sub(/Controller$/, 'Excel::Import').safe_constantize && self.name.sub(/Controller$/, 'Excel').safe_constantize) ||
-          ("#{self.excel_class_name}::Import".safe_constantize && self.excel_class_name.safe_constantize) ||
-          self.resource_class
+          (name.sub(/Controller$/, 'Excel::Import').safe_constantize && name.sub(/Controller$/, 'Excel').safe_constantize) ||
+          ("#{excel_class_name}::Import".safe_constantize && excel_class_name.safe_constantize) ||
+          resource_class
       end
 
-      unless self.method_defined? :exportable_class
-        self.class_attribute :exportable_class, instance_writer: false
+      return if method_defined? :exportable_class
 
-        self.exportable_class =
-          _exportable_class ||
-          (self.name.sub(/Controller$/, 'Excel::Export').safe_constantize && self.name.sub(/Controller$/, 'Excel').safe_constantize) ||
-          ("#{self.excel_class_name}::Export".safe_constantize && self.excel_class_name.safe_constantize) ||
-          self.resource_class
-      end
+      class_attribute :exportable_class, instance_writer: false
+
+      self.exportable_class =
+        _exportable_class ||
+        (name.sub(/Controller$/, 'Excel::Export').safe_constantize && name.sub(/Controller$/, 'Excel').safe_constantize) ||
+        ("#{excel_class_name}::Export".safe_constantize && excel_class_name.safe_constantize) ||
+        resource_class
     end
 
     def excel_class_name
       unless @excel_class_name.present?
-        resource_class_name_arr = self.resource_class.name.split('::')
-        if resource_class_name_arr.size > 1
-          @excel_class_name = ( resource_class_name_arr.insert(1, 'Excel') ).join('::')
-        else
-          @excel_class_name = ( resource_class_name_arr.insert(0, 'Excel') ).join('::')
-        end
+        resource_class_name_arr = resource_class.name.split('::')
+        @excel_class_name = if resource_class_name_arr.size > 1
+                              resource_class_name_arr.insert(1, 'Excel').join('::')
+                            else
+                              resource_class_name_arr.insert(0, 'Excel').join('::')
+                            end
       end
       @excel_class_name
     end
 
-    def set_view_path path
+    def set_view_path(path)
       @view_path = path
     end
   end
@@ -178,12 +170,10 @@ class SimpleController::BaseController < ::InheritedResources::Base
     respond_with(*with_chain(collection), options)
   end
 
-
   # 对于resource的相关操作，都调用policy进行authorize
   def set_resource_ivar(resource)
-    parent_objects = symbols_for_association_chain.reduce({}) do |h, sym|
+    parent_objects = symbols_for_association_chain.each_with_object({}) do |sym, h|
       h[sym.to_sym] = instance_variable_get("@#{sym}")
-      h
     end
     policy_info = {
       record: resource,
@@ -196,9 +186,8 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   def set_collection_ivar(collection)
-    parent_objects = symbols_for_association_chain.reduce({}) do |h, sym|
+    parent_objects = symbols_for_association_chain.each_with_object({}) do |sym, h|
       h[sym.to_sym] = instance_variable_get("@#{sym}")
-      h
     end
     policy_info = {
       collection: collection,
@@ -227,7 +216,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   def extract_view_path
-    controller_class_path = controller_path.split "/"
+    controller_class_path = controller_path.split '/'
     if controller_class_path.size > 1
       File.join controller_class_path[0], controller_class_path[-1]
     else
@@ -236,7 +225,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   # 可以进行继承实现
-  def after_association_chain association
+  def after_association_chain(association)
     association
   end
 
@@ -260,16 +249,15 @@ class SimpleController::BaseController < ::InheritedResources::Base
     association
   end
 
-  alias_method :origin_end_of_association_chain, :end_of_association_chain
+  alias origin_end_of_association_chain end_of_association_chain
 
   def policy_association_chain
     policy_class ||= self.class.instance_variable_get(:@policy_class)
     if policy_class.present? &&
-        (scope_policy_class = "#{policy_class}::Scope".safe_constantize) &&
-        origin_end_of_association_chain.is_a?(ActiveRecord::Relation)
-      parent_objects = symbols_for_association_chain.reduce({}) do |h, sym|
+       (scope_policy_class = "#{policy_class}::Scope".safe_constantize) &&
+       origin_end_of_association_chain.is_a?(ActiveRecord::Relation)
+      parent_objects = symbols_for_association_chain.each_with_object({}) do |sym, h|
         h[sym.to_sym] = instance_variable_get("@#{sym}")
-        h
       end
       scope_policy_class.new(current_user, origin_end_of_association_chain, **parent_objects).resolve
     else
@@ -316,7 +304,8 @@ class SimpleController::BaseController < ::InheritedResources::Base
     # 增加默认id排序
     association = association.order(id: :desc) if association.respond_to?(:order) && !self.class.instance_variable_get(:@order_off)
     # distinct处理
-    association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct)|| !active_record? || params.dig(:q, :jorder).present? || params[:distinct_off].present?
+    association = association.distinct unless self.class.instance_variable_get(:@distinct_off) || !association.respond_to?(:distinct) || !active_record? || params.dig(:q,
+                                                                                                                                                                       :jorder,).present? || params[:distinct_off].present?
     association
   end
 
@@ -328,27 +317,25 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   def collection
     get_collection_ivar || set_collection_ivar(
-      paginate_association_chain
+      paginate_association_chain,
     )
   end
 
   def permitted_params
     action_resource_params_method_name = "#{params[:action]}_#{resource_params_method_name}"
     respond_to?(action_resource_params_method_name, true) ?
-      {resource_request_name => send(action_resource_params_method_name)} :
-      {resource_request_name => send(resource_params_method_name)}
+      { resource_request_name => send(action_resource_params_method_name) } :
+      { resource_request_name => send(resource_params_method_name) }
   rescue ActionController::ParameterMissing
     # typically :new action
-    if params[:action].to_s == 'new'
-      {resource_request_name => {}}
-    else
-      raise
-    end
+    raise unless params[:action].to_s == 'new'
+
+    { resource_request_name => {} }
   end
 
   private
 
-  def authorize_if_policy_class record, query, policy_class: nil
+  def authorize_if_policy_class(record, query, policy_class: nil)
     policy_class ||= self.class.instance_variable_get(:@policy_class)
     policy_class&.method_defined?(query) ?
       authorize(record, query, policy_class: policy_class) :
@@ -361,7 +348,15 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   def ransack_association(association, query_params)
     # scopes，代表前端直接调用后台的scope过滤
-    association = Array(query_params[:scopes]).reduce(association) { |_association, _scope| _association.send(_scope) } if query_params[:scopes].present?
+    # scopes item如果是hash，则 key: scope名称 value: 转成symbolize keys
+    if query_params[:scopes].present?
+      association = Array.wrap(query_params[:scopes]).reduce(association) do |_association, _scope|
+        _scope.is_a?(Hash) ?
+          _scope.reduce(_association) { |_scope_association, (k, v)| method_invoke(_scope_association, k, v) } :
+          _association.send(_scope)
+      end
+    end
+
     if active_record?
       association = association.ransack(query_params.except(:scopes, :refs, :jorder)).result
       # PG，为了支持distinct和order的操作，需要增加refs，手动includes 和 joins
@@ -371,9 +366,9 @@ class SimpleController::BaseController < ::InheritedResources::Base
       end
       if query_params.dig(:jorder).present?
         order_array = Array(query_params.dig(:jorder))
-        sql= order_array.map do |order_string|
+        sql = order_array.map do |order_string|
           _attr, _order = order_string.split(' ')
-          _jsonb_attr = _attr.split('.').map.with_index { |a, index| index == 0 ? a : "'#{a}'"}.join('->')
+          _jsonb_attr = _attr.split('.').map.with_index { |a, index| index == 0 ? a : "'#{a}'" }.join('->')
           "#{_jsonb_attr} #{_order}"
         end.join(', ')
         association = association.order(Arel.sql(sql))
@@ -386,5 +381,37 @@ class SimpleController::BaseController < ::InheritedResources::Base
         association.where(selector).order(*Array(order_params)) : association.where(selector)
     end
     association
+  end
+
+  def method_invoke(record, subject, args)
+    subject_arity = record.__send__(:method, subject.to_sym).arity
+
+    return record.__send__(subject) if subject_arity.zero?
+
+    if subject_arity < 0
+      if args.is_a?(Hash)
+        return record.__send__(subject, **args.symbolize_keys)
+      elsif args.is_a?(Array)
+        return record.__send__(subject, *args)
+      else
+        return record.__send__(subject, args)
+      end
+    end
+
+    arg_arity = subject_parameters.select { |p| !p.first.to_s.start_with?('key') }.count
+    key_arity = subject_arity - arg_arity
+
+    _args = if arg_arity > 0
+              args.is_a?(Array) ? args[0..(arg_arity - 1)] : [args][0..(arg_arity - 1)]
+            else
+              []
+            end
+    _keys = if key_arity > 0
+              args.is_a?(Array) ? args[arg_arity..(subject_arity - 1)].to_h : args
+            else
+              {}
+            end
+
+    record.__send__(subject, *_args, **_keys.symbolize_keys)
   end
 end
