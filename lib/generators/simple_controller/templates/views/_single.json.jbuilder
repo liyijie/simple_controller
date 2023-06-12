@@ -5,7 +5,7 @@ json.extract!(
   :id,
   :created_at,
   :updated_at,
-  <%- attributes_names.each do |attribute_name| -%>
+  <%- single_attribute_names.each do |attribute_name| -%>
   :<%= attribute_name %>,
   <%- end -%>
 )
