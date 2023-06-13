@@ -347,6 +347,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   def ransack_association(association, query_params)
+    query_params = query_params.to_unsafe_h if query_params.present?
     # scopes，代表前端直接调用后台的scope过滤
     # scopes item如果是hash，则 key: scope名称 value: 转成symbolize keys
     if query_params[:scopes].present?
