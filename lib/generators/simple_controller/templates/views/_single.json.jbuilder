@@ -1,7 +1,7 @@
 <%- if active_record? -%>
 json.extract!(
   <%= resource_singular %>,
-  *<%= resource_singular %>.class.try(:extra_permitted_attributes),
+  *<%= resource_singular %>.class.try(:extra_view_attributes, 'single'),
   :id,
   :created_at,
   :updated_at,
