@@ -353,7 +353,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
     if query_params[:scopes].present?
       association = Array.wrap(query_params[:scopes]).reduce(association) do |_association, _scope|
         _scope.is_a?(Hash) ?
-          _scope.reduce(_association) { |_scope_association, (k, v)| method_invoke(_scope_association, k, v) } :
+          _scope.symbolize_keys.reduce(_association) { |_scope_association, (k, v)| method_invoke(_scope_association, k, v) } :
           _association.send(_scope)
       end
     end
