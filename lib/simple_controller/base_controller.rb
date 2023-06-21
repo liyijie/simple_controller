@@ -299,16 +299,18 @@ class SimpleController::BaseController < ::InheritedResources::Base
       if defined?(Com::CounterStorage) && Array(params[:group_keys]).count > 1
         hash = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
         @statistics = Com::CounterStorage.load(params[:group_keys], hash, enum_dics: params[:enum_dics]&.to_unsafe_h || {}).group_sum(*params[:group_keys], include_sum: true)
-      elsif defined?(Com::Attr::Stat::Collection) && params[:collection_stat_condition].present?
-        # 支持collection_stat_condition
-        stat_condition = Com::Attr::Stat::Collection.new params.to_unsafe_h[:collection_stat_condition]
-        @statistics = statistics_association.ta_statistic(stat_condition)
-      elsif defined?(Com::Attr::Stat::Resource) && params[:resource_stat_condition].present?
-        @resource_stat_condition = Com::Attr::Stat::Resource.new params.to_unsafe_h[:resource_stat_condition]
       else
         @statistics = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
       end
     end
+
+    if defined?(Com::Attr::Stat::Collection) && params[:collection_stat_condition].present?
+      # 支持collection_stat_condition
+      stat_condition = Com::Attr::Stat::Collection.new params.to_unsafe_h[:collection_stat_condition]
+      @statistics = statistics_association.ta_statistic(stat_condition)
+    end
+
+    @resource_stat_condition = Com::Attr::Stat::Resource.new params.to_unsafe_h[:resource_stat_condition] if defined?(Com::Attr::Stat::Resource) && params[:resource_stat_condition].present?
 
     association = ransack_association(association, params[:sub_q]) unless self.class.instance_variable_get(:@ransack_off) || params[:sub_q].blank?
     # 增加默认id排序
