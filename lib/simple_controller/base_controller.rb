@@ -8,6 +8,10 @@ class SimpleController::BaseController < ::InheritedResources::Base
     render json: { error: e.message }, status: 403
   end
 
+  def list_index
+    index!
+  end
+
   def index
     index!
   end
@@ -295,6 +299,12 @@ class SimpleController::BaseController < ::InheritedResources::Base
       if defined?(Com::CounterStorage) && Array(params[:group_keys]).count > 1
         hash = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
         @statistics = Com::CounterStorage.load(params[:group_keys], hash, enum_dics: params[:enum_dics]&.to_unsafe_h || {}).group_sum(*params[:group_keys], include_sum: true)
+      elsif defined?(Com::Attr::Stat::Collection) && params[:collection_stat_condition].present?
+        # 支持collection_stat_condition
+        stat_condition = Com::Attr::Stat::Collection.new params.to_unsafe_h[:collection_stat_condition]
+        @statistics = statistics_association.ta_statistic(stat_condition)
+      elsif defined?(Com::Attr::Stat::Resource) && params[:resource_stat_condition].present?
+        @resource_stat_condition = Com::Attr::Stat::Resource.new params.to_unsafe_h[:resource_stat_condition]
       else
         @statistics = statistics_association.group(params[:group_keys]).count.merge(count: statistics_association.count)
       end
