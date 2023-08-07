@@ -306,6 +306,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
     if defined?(Com::Attr::Stat::Collection) && params[:collection_stat_condition].present?
       # 支持collection_stat_condition
+      statistics_association = association.unscope(:order).distinct
       stat_condition = Com::Attr::Stat::Collection.new params.to_unsafe_h[:collection_stat_condition]
       @statistics = statistics_association.ta_statistic(stat_condition)
     end
