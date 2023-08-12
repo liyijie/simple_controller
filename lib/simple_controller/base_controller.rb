@@ -29,17 +29,17 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   def index!(options = {}, &block)
-    options = { template: "#{self.class.view_path}/index" }.merge options
+    options = { template: "#{response_view_path}/index" }.merge options
     super(options, &block)
   end
 
   def show!(options = {}, &block)
-    options = { template: "#{self.class.view_path}/show" }.merge options
+    options = { template: "#{response_view_path}/show" }.merge options
     super(options, &block)
   end
 
   def create!(options = {}, &block)
-    options = { template: "#{self.class.view_path}/show", status: 201 }.merge options
+    options = { template: "#{response_view_path}/show", status: 201 }.merge options
     super(options, &block)
   end
 
@@ -47,7 +47,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
     # 可以传入resource_params进行方法复用
     _resource_params = options.delete(:resource_params)
     _update_params = _resource_params.present? ? [_resource_params] : resource_params
-    options = { template: "#{self.class.view_path}/show", status: 201 }.merge options
+    options = { template: "#{response_view_path}/show", status: 201 }.merge options
 
     object = resource
 
@@ -105,6 +105,14 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   protected
+
+  def response_view_path
+    if params[:ta_templates].present? && defined?(Forms::Template)
+      'ta_records'
+    else
+      self.class.view_path
+    end
+  end
 
   class << self
     attr_reader :view_path
@@ -165,12 +173,12 @@ class SimpleController::BaseController < ::InheritedResources::Base
   end
 
   def respond_resource(options: {})
-    options = { template: "#{self.class.view_path}/show", status: 201 }.merge options
+    options = { template: "#{response_view_path}/show", status: 201 }.merge options
     respond_with(*with_chain(resource), options)
   end
 
   def respond_collection(options: {})
-    options = { template: "#{self.class.view_path}/index" }.merge options
+    options = { template: "#{response_view_path}/index" }.merge options
     respond_with(*with_chain(collection), options)
   end
 
@@ -187,6 +195,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
     }
     authorize_if_policy_class policy_info, "#{action_name}?"
     instance_variable_set("@#{resource_instance_name}", resource)
+    @ta_record = resource
   end
 
   def set_collection_ivar(collection)
@@ -201,6 +210,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
     }
     authorize_if_policy_class policy_info, "#{action_name}?"
     instance_variable_set("@#{resource_collection_name}", collection)
+    @ta_records = collection
   end
 
   def association_chain
