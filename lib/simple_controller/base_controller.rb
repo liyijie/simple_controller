@@ -156,6 +156,8 @@ class SimpleController::BaseController < ::InheritedResources::Base
     end
 
     def excel_class_name
+      return name if resource_class.blank?
+
       unless @excel_class_name.present?
         resource_class_name_arr = resource_class.name.split('::')
         @excel_class_name = if resource_class_name_arr.size > 1
