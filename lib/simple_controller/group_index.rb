@@ -41,7 +41,12 @@ module SimpleController::GroupIndex
     #   "C"=>{nil=>[["C", nil, "completed"]]},
     #   "B"=>{nil=>[["B", nil, "pending"]]}
     # }
-    tree_result = process_statistics_key.call(statistics.keys, keys.size - 1)
+    tree_result =
+      if statistics.values.first.is_a?(Array) # 多于一个分组
+        process_statistics_key.call(statistics.keys, keys.size - 1)
+      else # 只有一个分组
+        statistics.reduce({}) { |result, (k, v)| result.merge(k => [k])}
+      end
     data = tree_result_mount_data(tree_result, statistics, group_configs)
 
     render json: { current_page: 1, total_pages: 1,total_count: data.count, records: data }, status: 200
