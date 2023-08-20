@@ -50,32 +50,30 @@ module SimpleController::GroupIndex
   def tree_result_mount_data(tree_result, statistics, group_configs, depth=0)
     (tree_result || []).map do |key, value|
       children =
-        if value.is_a?(Hash)
-          tree_result_mount_data(value, statistics, group_configs, depth + 1)
-        elsif value.is_a?(Array)
-          fake_tree_result = value.map { |ary_key| [ary_key.last, [ary_key]] }.to_h
-          if fake_tree_result == tree_result
-            []
-          else
-            tree_result_mount_data(
-              fake_tree_result,
-              statistics,
-              group_configs,
-              depth + 1
-            )
-          end
-        else
-          []
-        end
+      if depth > group_configs.length
+        []
+      elsif value.is_a?(Hash)
+        tree_result_mount_data(value, statistics, group_configs, depth + 1)
+      elsif value.is_a?(Array)
+        fake_tree_result = value.map { |ary_key| [ary_key.last, [ary_key]] }.to_h
+        tree_result_mount_data(
+          fake_tree_result,
+          statistics,
+          group_configs,
+          depth + 1,
+        )
+      else
+        []
+      end
       {
         count: tree_result_get_count_sum(value, statistics),
         children: children,
       }.merge(
         key.nil? ? {
-          ransack_key: (group_configs[depth] || group_configs.last)[:ransack_key].gsub(/_eq$/, '_null'),
+          ransack_key: group_configs[depth][:ransack_key].gsub(/_eq$/, '_null'),
           ransack_value: true,
         } : {
-          ransack_key: (group_configs[depth] || group_configs.last)[:ransack_key],
+          ransack_key: group_configs[depth][:ransack_key],
           ransack_value: key,
         }
       )
