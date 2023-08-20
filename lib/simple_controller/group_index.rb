@@ -42,7 +42,7 @@ module SimpleController::GroupIndex
     #   "B"=>{nil=>[["B", nil, "pending"]]}
     # }
     tree_result =
-      if statistics.values.first.is_a?(Array) # 多于一个分组
+      if keys.length > 1 # 多于一个分组
         process_statistics_key.call(statistics.keys, keys.size - 1)
       else # 只有一个分组
         statistics.reduce({}) { |result, (k, v)| result.merge(k => [k])}
