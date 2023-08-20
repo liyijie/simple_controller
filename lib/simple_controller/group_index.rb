@@ -67,7 +67,6 @@ module SimpleController::GroupIndex
         else
           []
         end
-      p depth
       {
         count: tree_result_get_count_sum(value, statistics),
         children: children,
