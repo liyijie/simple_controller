@@ -50,7 +50,7 @@ module SimpleController::GroupIndex
   def tree_result_mount_data(tree_result, statistics, group_configs, depth=0)
     (tree_result || []).map do |key, value|
       children =
-      if depth > group_configs.length
+      if depth + 1 > group_configs.length - 1
         []
       elsif value.is_a?(Hash)
         tree_result_mount_data(value, statistics, group_configs, depth + 1)
