@@ -57,6 +57,17 @@ class SimpleController::BaseController < ::InheritedResources::Base
     respond_with_dual_blocks(object, options, &block)
   end
 
+  def update_resource(object, attributes)
+    new_type = attributes&.first&.dig(object.class.inheritance_column)
+
+    if new_type.present?
+      object.type = new_type
+      object = object.becomes!(new_type.constantize)
+    end
+
+    super(object, attributes)
+  end
+
   def batch_destroy
     collection.transaction do
       params[:ids].each do |id|
