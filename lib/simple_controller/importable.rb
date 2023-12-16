@@ -32,7 +32,7 @@ module SimpleController::Importable
 
   def import
     xlsx_file = params[:file] || importable_class.import_excel_klass.new(params[:uid])
-    response = importable_class.import_xlsx(xlsx_file, collection, **params.to_unsafe_h.symbolize_keys)
+    response = importable_class.import_xlsx(xlsx_file, collection, **params.to_unsafe_h.symbolize_keys.merge({ current_user: try(:current_user) }))
     render json: response, status: 201
   end
 
