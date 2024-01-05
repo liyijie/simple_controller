@@ -305,7 +305,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       parent_objects = symbols_for_association_chain.each_with_object({}) do |sym, h|
         h[sym.to_sym] = instance_variable_get("@#{sym}")
       end
-      scope_policy_class.new(current_user, database_policy_association_chain, **parent_objects).resolve
+      scope_policy_class.new(current_user, origin_end_of_association_chain, **parent_objects).resolve
     else
       origin_end_of_association_chain.respond_to?(:all) ?
         origin_end_of_association_chain.all : origin_end_of_association_chain
