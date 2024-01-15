@@ -141,6 +141,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       @paginate_off = options.delete(:paginate_off)
       @distinct_off = options.delete(:distinct_off)
       @policy_class = options.delete(:policy_class) || name.sub(/Controller$/, 'Policy').safe_constantize
+      @database_policy = name.sub(/Controller$/, 'DatabasePolicy')
       _importable_class = options.delete(:importable_class)
       _exportable_class = options.delete(:exportable_class)
 
@@ -151,9 +152,9 @@ class SimpleController::BaseController < ::InheritedResources::Base
         class_attribute :importable_class, instance_writer: false
         self.importable_class =
           _importable_class ||
-          (name.sub(/Controller$/, 'Excel::Import').safe_constantize && name.sub(/Controller$/, 'Excel').safe_constantize) ||
-          ("#{excel_class_name}::Import".safe_constantize && excel_class_name.safe_constantize) ||
-          resource_class
+            (name.sub(/Controller$/, 'Excel::Import').safe_constantize && name.sub(/Controller$/, 'Excel').safe_constantize) ||
+            ("#{excel_class_name}::Import".safe_constantize && excel_class_name.safe_constantize) ||
+            resource_class
       end
 
       return if method_defined? :exportable_class
@@ -162,9 +163,9 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
       self.exportable_class =
         _exportable_class ||
-        (name.sub(/Controller$/, 'Excel::Export').safe_constantize && name.sub(/Controller$/, 'Excel').safe_constantize) ||
-        ("#{excel_class_name}::Export".safe_constantize && excel_class_name.safe_constantize) ||
-        resource_class
+          (name.sub(/Controller$/, 'Excel::Export').safe_constantize && name.sub(/Controller$/, 'Excel').safe_constantize) ||
+          ("#{excel_class_name}::Export".safe_constantize && excel_class_name.safe_constantize) ||
+          resource_class
     end
 
     def excel_class_name
@@ -207,6 +208,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       context: params,
       parents: parent_objects,
     }
+    authorize_if_database_policy policy_info, "#{action_name}?"
     authorize_if_policy_class policy_info, "#{action_name}?"
     instance_variable_set("@#{resource_instance_name}", resource)
     @ta_record = resource
@@ -222,6 +224,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       context: params,
       parents: parent_objects,
     }
+    authorize_if_database_policy policy_info, "#{action_name}?"
     authorize_if_policy_class policy_info, "#{action_name}?"
     instance_variable_set("@#{resource_collection_name}", collection)
     @ta_records = collection
@@ -279,11 +282,26 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   alias origin_end_of_association_chain end_of_association_chain
 
+  def database_policy_association_chain
+    policy_class ||= self.class.instance_variable_get(:@database_policy)
+    if policy_class.present? &&
+      (scope_policy_class = "#{policy_class}::Scope".safe_constantize) &&
+      origin_end_of_association_chain.is_a?(ActiveRecord::Relation)
+      parent_objects = symbols_for_association_chain.each_with_object({}) do |sym, h|
+        h[sym.to_sym] = instance_variable_get("@#{sym}")
+      end
+      scope_policy_class.new(current_user, policy_association_chain, **parent_objects).resolve
+    else
+      origin_end_of_association_chain.respond_to?(:all) ?
+        origin_end_of_association_chain.all : origin_end_of_association_chain
+    end
+  end
+
   def policy_association_chain
     policy_class ||= self.class.instance_variable_get(:@policy_class)
     if policy_class.present? &&
-       (scope_policy_class = "#{policy_class}::Scope".safe_constantize) &&
-       origin_end_of_association_chain.is_a?(ActiveRecord::Relation)
+      (scope_policy_class = "#{policy_class}::Scope".safe_constantize) &&
+      origin_end_of_association_chain.is_a?(ActiveRecord::Relation)
       parent_objects = symbols_for_association_chain.each_with_object({}) do |sym, h|
         h[sym.to_sym] = instance_variable_get("@#{sym}")
       end
@@ -297,9 +315,10 @@ class SimpleController::BaseController < ::InheritedResources::Base
   # ransack q, 这里主要是为了统计
   def query_association_chain
     if self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
-      policy_association_chain
+      database_policy_association_chain
+      # policy_association_chain
     else
-      ransack_association(policy_association_chain, params[:q])
+      ransack_association(database_policy_association_chain, params[:q])
     end
   end
 
@@ -372,6 +391,14 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
   private
 
+  def authorize_if_database_policy(record, query)
+    policy_name = self.class.instance_variable_get(:@database_policy)
+    database_policy = policy_name&.safe_constantize
+    database_policy&.method_defined?(query) ?
+      authorize(record, query, policy_class: database_policy) :
+      record
+  end
+
   def authorize_if_policy_class(record, query, policy_class: nil)
     policy_class ||= self.class.instance_variable_get(:@policy_class)
     policy_class&.method_defined?(query) ?
@@ -416,7 +443,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       order_params = _params.delete(:s)
       selector = RansackMongo::Query.parse(_params)
       association = order_params.present? ?
-        association.where(selector).order(*Array(order_params)) : association.where(selector)
+                      association.where(selector).order(*Array(order_params)) : association.where(selector)
     end
     association
   end
