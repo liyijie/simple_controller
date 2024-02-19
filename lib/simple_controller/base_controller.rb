@@ -292,8 +292,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       end
       scope_policy_class.new(current_user, policy_association_chain, **parent_objects).resolve
     else
-      origin_end_of_association_chain.respond_to?(:all) ?
-        origin_end_of_association_chain.all : origin_end_of_association_chain
+      policy_association_chain
     end
   end
 
@@ -316,7 +315,6 @@ class SimpleController::BaseController < ::InheritedResources::Base
   def query_association_chain
     if self.class.instance_variable_get(:@ransack_off) || params[:q].blank?
       database_policy_association_chain
-      # policy_association_chain
     else
       ransack_association(database_policy_association_chain, params[:q])
     end
