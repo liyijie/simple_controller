@@ -143,7 +143,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       @distinct_off = options.delete(:distinct_off)
       @policy_class = options.delete(:policy_class) || name.sub(/Controller$/, 'Policy').safe_constantize
       @database_policy = name.sub(/Controller$/, 'DatabasePolicy')
-      @zh_name = options.delete(:zh_name).presence || name
+      @zh_name = options.delete(:zh_name)
       @zh_actions = options.delete(:zh_actions).presence || {}
       _importable_class = options.delete(:importable_class)
       _exportable_class = options.delete(:exportable_class)
