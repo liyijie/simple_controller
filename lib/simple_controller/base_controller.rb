@@ -144,7 +144,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
       @policy_class = options.delete(:policy_class) || name.sub(/Controller$/, 'Policy').safe_constantize
       @database_policy = name.sub(/Controller$/, 'DatabasePolicy')
       @zh_name = options.delete(:zh_name)
-      @zh_actions = options.delete(:zh_actions).presence || {}
+      @zh_actions = options.delete(:zh_actions) || {}
       _importable_class = options.delete(:importable_class)
       _exportable_class = options.delete(:exportable_class)
 
@@ -191,7 +191,7 @@ class SimpleController::BaseController < ::InheritedResources::Base
 
     def zh_actions
       default_actions = { index: '列表', show: '查看', update: '编辑', create: '新增', destroy: '删除', export: '导出', import: '导入' }.with_indifferent_access
-      default_actions.merge(@zh_actions)
+      default_actions.merge(@zh_actions || {})
     end
   end
 
