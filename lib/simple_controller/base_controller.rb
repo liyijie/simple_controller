@@ -377,6 +377,14 @@ class SimpleController::BaseController < ::InheritedResources::Base
     association
   end
 
+  def resource
+    get_resource_ivar || set_resource_ivar(after_of_association_chain.send(method_for_find, params[:id]))
+  end
+
+  def build_resource
+    get_resource_ivar || set_resource_ivar(after_of_association_chain.send(method_for_build, *resource_params))
+  end
+
   def collection
     get_collection_ivar || set_collection_ivar(
       paginate_association_chain,
